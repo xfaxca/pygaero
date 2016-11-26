@@ -81,7 +81,3 @@ def set_idx_ls(df_ls, idx_name=''):
                   "of current DataFrame." % df_num)
 
     return 0
-
-
-# TODO: add function to set all columns in a list in the same order (if they are the same dimension in col nums).
-# TODO: need to test this thoroughly if i do

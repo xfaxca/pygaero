@@ -1,7 +1,6 @@
 # gen_chem.py
 # TODO: Add type of each variable in each function with format param (type)
 # TODO: clean up docstrings and remove debug lines
-# Do this to io.py and _dcheck.py as well then upload. After that, continue to add more functions.
 
 # Module import
 import pandas as pd

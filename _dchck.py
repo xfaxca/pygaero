@@ -106,6 +106,26 @@ def check_eq_ls_len(list_ls=[]):
     return 0
 
 
+def check_num_equal(val1, val2):
+    """
+    Function to check if two values are equal. Expects a numerical argument
+    :param val1: Numerical value 1 to check
+    :param val2: Numerical value 2 to check
+    :return: Nothing if check is passed. Otherwise, returns error to terminal and exits script
+    """
+    if val1 == val2:
+        pass
+    else:
+        main_module, main_fn, main_lineno = parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = parent_fn_mod_2step()
+        print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
+        print('     Error on line %i in module %s' % (calling_lineno, calling_module))
+        print('         Invalid input for function %s' % calling_fn)
+        sys.exit('          ERROR: Two values are not equal.')
+
+    return 0
+
+
 def check_numeric(values=[]):
     """
     This function checks to see if all values in a list are numerical. It passed tests with nans and strings. If a
