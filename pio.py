@@ -3,11 +3,10 @@
 # Module import
 import pandas as pd
 import os.path
+import sys
 import pygaero._dchck as check
 
-__doc__ = "Module containing basic i/o functions for data import and export.\n" \
-          "Functions:" \
-          "[insert functions]"
+__doc__ = "Module containing basic i/o functions for data import and export."
 
 
 def read_desorbs(fdir="", flist=[""]):
@@ -22,24 +21,23 @@ def read_desorbs(fdir="", flist=[""]):
     """
     # Check data types to ensure that errors are prevented further down
     # todo: Add check to see if fdir is a solid directory.
-    # todo: Also check whether fdir + flist is a legitimate string or if flist elements are of type pathlib.Path
+
     check.check_string(values=[fdir])
     # Check whether each file in flist is a pathlib2.Path type. If not, test to make sure it is a string.
     if not check.check_pathlib_path(values=flist):
         check.check_string(values=flist)
+    # Check to make sure fdir exists as a directory
+    if (len(fdir) > 0) and not os.path.isdir(fdir):
+        print('Directory %s does not exist! Quitting script...' % fdir)
+        sys.exit()
 
     # Modify flist to reflect the full path
     for i in range(len(flist)):
         flist[i] = fdir + flist[i]
-    # for f in flist:
-    #     print('new full file name:', f)       # debug line
 
     df_desorbs_ls = []
     for f, fnum in zip(flist, range(len(flist))):
-        # print('current f:', f)                # debug line
-        # print('current fnum:', fnum)
         if os.path.isfile(f):
-            # print('File found')               # debug line
             if check.f_is_xls(file=f):
                 df_tmp = pd.read_excel(io=f, index_col=0)
                 df_desorbs_ls.append(df_tmp)

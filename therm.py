@@ -1,26 +1,25 @@
 # fig_cycle.py
 
-# Module import
+# Module/package import
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import peakutils
 import pygaero._dchck as check
 
-__doc__ = "Module containing functions designed for thermogram analysis, with a focus on" \
-          "peak signal detection durign thermograms (Tmax). \n" \
-          "Functions: \n" \
-          "[insert functions]"
+__doc__ = "Module containing functions designed for thermogram time series analysis, with a focus on" \
+          "peak signal detection during thermograms (Tmax)."
 
 
 def peak_find(tseries_df, temp, ion_names,
-                      peak_threshold=0.05, min_dist=100, smth=False):
+                      peak_threshold=0.05, min_dist=50, smth=False):
     '''
     This function takes a pandas DataFrame containing desorption time series, along with a time series of Figaero
         heater temperatures. For each series (i.e., column in the DataFrame), the maximum value is found. For this,
         peakutils package is used. To ensure that a global maximum is found, parameters [peak_threshold] and [min_dist]
-        may need to be optimized. However, the default values of 0.05 and 100 have been tested on desorption time series
-        from several experiments, and no problems have been detected as of yet.'
+        may need to be optimized. However, the default values of 0.05 and 50 have been tested on desorption time series
+        from several experiments, and no problems have been detected as of yet. Smaller min_dist may be needed to
+        capture secondary TMax (TMax2) values.
 
     :param tseries_df: (DataFrame) pandas DataFrame with time series organized as the columns. Index should be
     :param temp: (float/int) Figaero desorption temperatures as recorded by EyeOn data, or other temperature logger.
@@ -44,7 +43,7 @@ def peak_find(tseries_df, temp, ion_names,
     check.check_int(values=[min_dist])
     check.check_bool(values=[smth])
 
-    for i in range(0, len(tseries_df.axes[1])):
+    for i in range(0, len(tseries_df.columns)):
         # Process each ion's time series sequentially
         ion_tseries = tseries_df.values[:, i]
 
@@ -56,15 +55,16 @@ def peak_find(tseries_df, temp, ion_names,
         # 2. The first two most prominent peaks are used to capture the major thermal behavior of the thermograms.
         dub_flag = 0
         npeaks = len(max_indices)
-        # print('num peaks = ', npeaks)                     # Debug line/optional output
+        # print('# of peaks for %s:' % tseries_df.columns[i], npeaks)                    # Debug line/optional output
         if npeaks == 0:
-            print('No peaks above threshold found for ion %s. Assigning NaN to Tmax values.' % tseries_df.columns[i])
+            # Optional output
+            # print('No peaks above threshold found for ion %s. Assigning NaN to Tmax values.' % tseries_df.columns[i])
             if i == 0:
-                TMax1 = [np.nan]
-                TMax2 = [np.nan]
-                MaxSig1 = [np.nan]
-                MaxSig2 = [np.nan]
-                DubFlag = [np.nan]
+                TMax1 = []
+                TMax2 = []
+                MaxSig1 = []
+                MaxSig2 = []
+                DubFlag = []
                 # give nan values to first ion since there are no peaks detected
             TMax1.append(np.nan)
             MaxSig1.append(np.nan)
@@ -114,32 +114,35 @@ def peak_find(tseries_df, temp, ion_names,
                     else:
                         pass
                     dub_flag += 1
-
     df_tmax = pd.DataFrame(data={'TMax1': TMax1,
                                       'MaxSig1': MaxSig1,
                                       'TMax2': TMax2,
                                       'MaxSig2': MaxSig2,
                                       'DubFlag': DubFlag},
-                                # columns=colnames,
-                                index=tseries_df.columns.values)
+                           index=tseries_df.columns.values)
+    df_tmax.index.name = "Molecule"
 
     return df_tmax
 
 
-def peakfind_df_ls(df_ls, pk_thresh=0.05, pk_win=100):
+def peakfind_df_ls(df_ls, pk_thresh=0.05, pk_win=50, min_temp=40.0, max_temp=190.0):
     """
     Function to apply function peak_find() to a list of pandas DataFrames, returning a list of DataFrames with
-        TMax data.
+        TMax data. By default, peaks are only searched for within the temperature range 40.0 - 190.0 Celcius
     :param df_ls: (pandas DataFrames): List of pandas DataFrames to process using peak_find()
     :param pk_thresh: (float): Peak threshold between 0.0 - 1.0
     :param pk_win: (int): Value to be passed to parameter min_dist in peak_find(). See peak_find() documentation for
             more details
+    :param min_temp: (float) Minimum temperature in celcius above which peak finding will take place
+    :param max_temp: (float) Maximum temperature in celcius below which peak finding will take place.
     :return: df_tmax_ls: A list of pandas DataFrames with TMax data. See docstring for peak_find() for more information.
     """
 
     df_tmax_ls = []
     for df in df_ls:
-        df_tmax = peak_find(tseries=df, temp=df.index, ion_names=df.columns,
+        df_tmax = peak_find(tseries_df=df[(df.index.values < max_temp) & (df.index.values > min_temp)],
+                            temp=df.index[(df.index.values < max_temp) & (df.index.values > min_temp)],
+                            ion_names=df.columns,
                             peak_threshold=pk_thresh, min_dist=pk_win)
         df_tmax_ls.append(df_tmax)
 
@@ -175,6 +178,75 @@ def plot_tmax(df, ions, tmax_temps, tmax_vals):
     plt.legend(fontsize=8)
     plt.show()
 
+    return 0
+
+
+def plot_tmax_double(df, ions, tmax_temps, tmax_temps2, tmax_vals, tmax_vals2):
+    """
+    Function to plot the desorption time series for a set of specified ions. The index values of df (df.index.values)
+        will be used for the x values during plotting. TMax values are indicated by a circular red marker. TMax2
+        is also plotted for those time series that are bimodal (double peak in desorption thermogram)
+    :param df: (pandas DataFrame) pandas DataFrame containing the desorption time series
+    :param ions: (string) List of string values (or np array) for the ions to plot
+    :param tmax_vals: (float) Corresponding tmax values for the items listed in parameter [ions]
+    :return: Nothing returned. Plot popped to screen.
+    """
+    # Check data types to prevent errors during plotting
+    check.check_dfs(values=[df])
+    check.check_string(values=ions)
+    check.check_numeric(values=tmax_temps)
+    check.check_numeric(values=tmax_temps2)
+    check.check_numeric(values=tmax_vals)
+    check.check_numeric(values=tmax_vals2)
+
+    n_series = len(ions)
+    cmap = get_cmap(n=n_series, cm='hsv')
+
+    for series_num, ion, tmax, tmax2, maxsig, maxsig2 in zip(range(0, n_series), ions, tmax_temps,
+                                                             tmax_temps2, tmax_vals, tmax_vals2):
+        color = cmap(series_num)
+        y = df.ix[:, ion].values
+        plt.plot(df.index.values, y, linewidth=2, c=color, label=ion, zorder=0)
+        plt.scatter(tmax, maxsig, marker='o', s=50, c='r', zorder=1)          # Add TMax1
+        plt.scatter(tmax2, maxsig2, marker='*', s=50, c='pink', zorder=1)    # Add TMax2
+
+    plt.xlim((min(df.index.values)*.9, max(df.index.values)*1.1))
+    plt.ylim((0, max(tmax_vals)*1.1))
+    plt.legend(fontsize=8)
+    plt.show()
+
+    return 0
+
+
+def flow_correction(thermograms, aero_samp_rates=[0.0], base_samp_rate=2.0):
+    """
+    A function to adjust desorption signals by the Figaero sample flow rate relative to the actual flow rate being
+        pulled in by the CIMS. For example, if 4 LPM is used to sample aerosol, but the sample rate into the CIMS is
+        2 LPM, then the thermograms need to be adjusted by *2/4. This is because the signal being sampled during
+        desorptions is twice as concentrated as what would be sampled in the gas phase by a 2 LPM flow. This is useful
+        and important if a direct comparison between gas and aerosol concentrations is to be made and if sensitivites
+        obtained from gas-phase calibrations are to be applied to the aerosol signals.
+
+        Note, thermograms are modified in-place, and overwritten.
+    :param thermograms: (pandas DataFrames) Time series of aerosol desorption thermograms obtained from a Figaero
+        ToF-CIMS
+    :param aero_samp_rate: (float) Aerosol sample rates for the Figaero inlet. Typically this is higher than the
+        base sample rate in order to reduce particle losses.
+    :param base_samp_rate: (float) The base sample rate for the CIMS. Default is a nominal 2.0, which is popularly used.
+        It is not suggested that this is changed unless a different sample rate has been verified.
+    :return: (pandas DataFrame list) thermograms_corr: The desorption thermogram time series that have been adjusted
+        for relative sample rates.
+    """
+    # Check data types to prevent subsequent errors
+    check.check_ls(ls=thermograms)
+    check.check_ls(ls=aero_samp_rates)
+    check.check_dfs(values=thermograms)
+    check.check_numeric(values=aero_samp_rates)
+    check.check_numeric(values=[base_samp_rate])
+
+    for df, samp_rate in zip(thermograms, aero_samp_rates):
+        for col in range(0, len(df.columns)):
+            df.ix[:, col] = df.values[:, col] * (base_samp_rate / samp_rate)
     return 0
 
 

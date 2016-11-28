@@ -1,8 +1,6 @@
 # gen_chem.py
-# TODO: Add type of each variable in each function with format param (type)
-# TODO: clean up docstrings and remove debug lines
 
-# Module import
+# Module/package import
 import pandas as pd
 import numpy as np
 import pygaero._dchck as check
@@ -10,9 +8,7 @@ import sys
 import periodic
 
 __doc__ = "Module containing general chemistry functions to handle chemical formula names, \n" \
-          "elemental analysis of formulas, etc.\n" \
-          "Functions: \n" \
-          "[insert functions]"
+          "elemental analysis of formulas, etc."
 
 
 # 1. Molecule name formatting/modification functions
@@ -139,7 +135,6 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
     :return df_ele: A returned pandas DataFrame containing statistics for the molecules in molec_ls
     """
 
-    # TODO: Need to check the errors for these. I don't think they're pointing to the correct functions.
     # Check data types to prevent subsequent errors.
     if check.check_ls(ls=molec_ls, nt_flag=True) and check.check_np_array(arr=molec_ls, nt_flag=True):
         main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
@@ -157,7 +152,9 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
     # print('check.check_ls(ls=cluster_group), nt_flag=True', check.check_ls(ls=cluster_group, nt_flag=True))
-    if not check.check_ls(ls=cluster_group, nt_flag=True):
+    if not cluster_group:
+        pass
+    elif not check.check_ls(ls=cluster_group, nt_flag=True):
         main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
         calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
         print('On line %i in function %s of %s' % (main_lineno, main_fn, main_module))
@@ -171,13 +168,18 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
     check.check_numeric(values=[clst_group_mw])
 
     # Set column names for returned DataFrame, df_ele.
-    columns = ["C", "H", "O", "N", "Cl", "F", "Br", cluster_group, "O/C", "H/C", "OSC", "OSC_N",
+    # columns = ["C", "H", "O", "N", "Cl", "F", "Br", cluster_group, "O/C", "H/C", "OSC", "OSC_N",
+    #            "MW", "MW_xclust"]
+    columns = ["C", "H", "O", "N", "Cl", "F", "Br", "O/C", "H/C", "OSC", "OSC_N",
                "MW", "MW_xclust"]
+    if cluster_group is not None:
+        print('extending by cluster_group')
+        columns.extend(cluster_group)
     # Extend columns list by # of elements in xtra_elements.
     if xtra_elements is not None:
         xtra_elements = check.is_element(eles=xtra_elements, return_cleaned=True)
         columns.extend(xtra_elements)
-    columns = set(columns)
+    columns = remove_duplicates(values=columns)
 
     # Define me, the molar mass of electrons to adjust molar mass of ion molecules by their respective charge
     me = 0.00054857990946
@@ -252,9 +254,9 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
     df_ele.ix[:, "O/C"] = o_to_c(o=df_ele.ix[:, "O"].values, c=df_ele.ix[:, "C"].values)
     df_ele.ix[:, "H/C"] = h_to_c(h=df_ele.ix[:, "H"].values, c=df_ele.ix[:, "C"].values)
     df_ele.ix[:, "OSC"] = osc(c=df_ele.ix[:, "C"].values, h=df_ele.ix[:, "H"].values,
-                                 o=df_ele.ix[:, "O"].values)
+                              o=df_ele.ix[:, "O"].values)
     df_ele.ix[:, "OSC_N"] = osc_nitr(c=df_ele.ix[:, "C"].values, h=df_ele.ix[:, "H"].values,
-                                        o=df_ele.ix[:, "O"].values, n=df_ele.ix[:, "N"].values)
+                                     o=df_ele.ix[:, "O"].values, n=df_ele.ix[:, "N"].values)
 
     return df_ele
 
@@ -409,3 +411,18 @@ def osc_nitr(c=[], h=[], o=[], n=[]):
 
     return ox_states_nitr
 
+
+# Miscellaneous functions
+def remove_duplicates(values):
+    """
+    Function to remove duplcate values from a list
+    :param values: (int/float/str/char) values from which duplicates should be removed
+    :return:
+    """
+    values_rm = []
+    seen = set()
+    for val in values:
+        if val not in seen:
+            values_rm.append(val)
+            seen.add(val)
+    return values_rm

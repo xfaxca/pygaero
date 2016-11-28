@@ -2,12 +2,12 @@
 
 from distutils.core import setup
 
-setup(name='df_tools',
-      version='1.0',
-      description='An Extension of Tools for pandas DataFrames',
+setup(name='pygaero',
+      version='1.2',
+      description='Python tools for FIGAERO HR-ToF-CIMS data processing and analysis.',
       author='Cameron Faxon',
       license='GNU GPLv3',
-      author_email='gnomeslice@tutanota.com',
-      url='https://github.com/gnomeone/df_tools',
-      packages=['df_tools'],
-      requires=['pandas', 'numpy', 'periodic', 'pathlib2', 'peakutils', 'matplotlib'])
+      author_email='Cameron@tutanota.com',
+      url='https://github.com/gnomeone/pygaero',
+      packages=['pygaero'],
+      requires=['pandas', 'numpy', 'periodic', 'pathlib2', 'peakutils', 'sklearn', 'matplotlib'])
