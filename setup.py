@@ -8,6 +8,6 @@ setup(name='pygaero',
       author='Cameron Faxon',
       license='GNU GPLv3',
       author_email='Cameron@tutanota.com',
-      url='https://github.com/gnomeone/pygaero',
+      url='https://github.com/xfaxca/pygaero',
       packages=['pygaero'],
       requires=['pandas', 'numpy', 'periodic', 'pathlib2', 'peakutils', 'sklearn', 'matplotlib'])
