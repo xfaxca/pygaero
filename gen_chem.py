@@ -94,7 +94,67 @@ def replace_group(molec_ls, old_groups, new_group=""):
     return molec_ls_new
 
 
-# 2. Molecule elemental analysis and statistics functions
+def concat_df_lists(df_ls1, df_ls2, axis=0, join='inner'):
+    """
+    This function takes two lists of pandas DataFrames and concatenates them. Options allow user to specify the axis
+        along which to concatenate as well as the pandas join method (e.g., 'inner', 'outer'). Where available,
+        inherent pandas DataFrame functionality is employed (e.g., transpose, axis selection, join method, etc).
+        Parameter choice should be in line with the requirements of the pandas library and associated functions,
+        and therefore the same convention is used for parameters axis and join. DataFrames are concatenated pairwise;
+        that is, df_ls1[i] is concatenated with df_ls2[i].
+
+        Specific to the pygaero package, this function is included for the joining of Tmax and elemental analysis
+        DataFrames in preparation for using clustering or classification algorithms from scikit-learn
+
+    Parameters:
+    :param df_ls1: A list of DataFrames on which to concatenate df_ls2
+    :param df_ls2: A list of DataFrames to concatenate onto the corresponding DataFrames
+    :param axis: The axis along which the DataFrames will be concatenated. axis=1 for column-wise, 0 for row-wise
+        (standard pandas DataFrame syntax). Example: if axis=0, DataFrames will be concatenated in the row dimension
+        (i.e., stacked vertically; will require same # of columns).  If axis=1, will be concatenated in the
+        column dimension (i.e., side-by-side)
+    :param join: Allows user to specify the join parameter for pandas.concat(). Must be compatible with choices
+        available within the pandas package.
+    :return: df_list: A list of DataFrames where elements are DataFrames from list 1 concatenated onto the corresponding
+        DataFrame from list 2
+    """
+    # Check data types to prevent errors during processing.
+    check.check_ls(ls=df_ls1)
+    check.check_ls(ls=df_ls2)
+    check.check_dfs(values=df_ls1)
+    check.check_dfs(values=df_ls2)
+    check.check_eq_ls_len(list_ls=[df_ls1, df_ls2])
+    check.check_numeric(values=[axis])
+    check.param_exists_in_set(value=axis, val_set=[0, 1])
+    check.check_string(values=[join])
+    check.param_exists_in_set(value=join, val_set=['inner', 'outer'])
+
+    # Initialize return list for concatenated DataFrames
+    df_ls_concat = []
+    # Check row or column lengths of lists to make sure they're the same.  If not, tell user, but try to proceed.
+    if axis == 0:
+        for df1, df2 in zip(df_ls1, df_ls2):
+            if df1.shape[1] != df2.shape[1]:
+                print('WARNING: You chose concatenation in row dimension (i.e., vertical stacking) with '
+                      'parameter axis=0,\n but some DataFrame pairs have different numbers of columns.  Proceeding...')
+            else:
+                pass
+    elif axis == 1:
+        for df1, df2 in zip(df_ls1, df_ls2):
+            if df1.shape[0] != df2.shape[0]:
+                print('WARNING: You chose to concatenate in column dimension (side-by-side) with axis=1, but'
+                      'some DataFrame pairs have different number of rows.  Proceeding...')
+    else:
+        print('ERROR: Parameter axis must be set to 0 or 1')
+        sys.exit()
+
+    for df1, df2 in zip(df_ls1, df_ls2):
+        df_ls_concat.append(pd.concat([df1, df2], axis=axis, join=join))
+
+    return df_ls_concat
+
+
+# 3. Molecule elemental analysis and statistics functions
 def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.90447, xtra_elements=None):
     """
     This function takes a list of string values that are chemical formulas and calculates a set of basic statistics for
@@ -417,7 +477,7 @@ def remove_duplicates(values):
     """
     Function to remove duplcate values from a list
     :param values: (int/float/str/char) values from which duplicates should be removed
-    :return:
+    :return: (int/float/str/char) Values with duplicates removed
     """
     values_rm = []
     seen = set()

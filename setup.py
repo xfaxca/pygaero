@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='pygaero',
-      version='1.3',
+      version='1.4',
       description='Python tools for FIGAERO HR-ToF-CIMS data processing and analysis.',
       author='Cameron Faxon',
       license='GNU GPLv3',

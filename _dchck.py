@@ -173,7 +173,7 @@ def check_int(values=[]):
             calling_module, calling_fn, calling_lineno = parent_fn_mod_2step()
             print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
             print('     Error on line %i in module %s' % (calling_lineno, calling_module))
-            print('         Non-integer frame object "%s" found list at index %i!' % (val, valnum))
+            print('         Non-integer object "%s" found list at index %i!' % (val, valnum))
             sys.exit('         ERROR: All values must be integers.')
     return 0
 
@@ -408,9 +408,18 @@ def f_is_xls(file=""):
 
 
 # 4. Error location finding functions
+def parent_fn_mod_1step():
+    """
+    This function finds the calling module, function and line number 1 step prior to current function
+
+    :return: calling module name, function name and line # for 1 step previous ('1step')
+    """
+
+    return stack()[1].filename, stack()[1].function, stack()[1].lineno
+
 def parent_fn_mod_2step():
     """
-    This function finds the calling module, file, and line number 2 steps prior to the current function.
+    This function finds the calling module, function, and line number 2 steps prior to the current function.
 
     Parameters:
     :return: calling module name, function name, and line number for 2 previous function calls ('2step')
@@ -420,7 +429,7 @@ def parent_fn_mod_2step():
 
 def parent_fn_mod_3step():
     """
-    This function finds the calling module, file and line number 3 steps prior to the current function.
+    This function finds the calling module, function and line number 3 steps prior to the current function.
 
     Parameters:
     :return: calling module name, function name, and line number for 3 previous function calls ('3step')

@@ -16,7 +16,7 @@ def example1():
     indir = ""  # input directory (same folder as script by default)
     infiles = ['desorb1.csv', 'desorb2.csv']  # input files as a list of strings
     # Read in list of csvs with figaero desorptions
-    df_desorbs_ls = pio.read_desorbs(fdir=indir, flist=infiles)
+    df_desorbs_ls = pio.read_files(fdir=indir, flist=infiles)
     print('# of files imported: ', len(df_desorbs_ls))
 
     # Clean ion names from default A_CxHyOzI_Avg format (strip underscores '_' and remove iodide

@@ -9,7 +9,7 @@ import pygaero._dchck as check
 __doc__ = "Module containing basic i/o functions for data import and export."
 
 
-def read_desorbs(fdir="", flist=[""]):
+def read_files(fdir="", flist=[""]):
     """
     This function reads in a list of csv/xls files containing aerosol desorption time series from a given directory and
         returns them as a list of pandas DataFrames. Accepted file formats are *.csv, *.xls and *.xlsx
