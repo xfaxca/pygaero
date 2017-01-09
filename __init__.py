@@ -15,7 +15,7 @@ from pygaero.clustering import *
 # Documentation, version #, etc.
 __doc__ = "Package: pygaero\n" \
           "Created: 09/02/2016\n" \
-          "Author contact: Cameron@tutanota.com \n" \
+          "Author contact: xfaxca@tutamail.com \n" \
           "Description: Python tools for the processing of data obtained from HR-ToF-CIMS, with some\n" \
           "functions being specifically designed for data obtained using the Filter Inlet for Gases and\n" \
           "Aerosols (FigAERO) inlet. Time series data is handled by pandas DataFrames, with data \n" \
