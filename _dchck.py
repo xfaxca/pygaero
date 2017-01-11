@@ -1,6 +1,10 @@
 # check.py
 
-# Module import
+"""
+This module provides functions for error checking to use either for other
+df_tools modules or otherwise.
+"""
+
 from inspect import *
 import pandas as pd
 import numpy as np
@@ -9,28 +13,36 @@ import pathlib2
 import os.path
 import periodic
 
+__all__ = ['check_ls',
+           'check_np_array',
+           'check_eq_ls_len',
+           'check_num_equal',
+           'check_numeric',
+           'check_int',
+           'check_string',
+           'check_bool',
+           'check_dfs',
+           'check_pathlib_path',
+           'param_exists_in_set',
+           'check_threshold',
+           'is_element',
+           'f_is_csv',
+           'f_is_xls',
+           'parent_fn_mod_1step',
+           'parent_fn_mod_2step',
+           'parent_fn_mod_3step']
 
-__doc__ = "\n-------------------------------------------------------------------------\n" \
-          "This module provides functions for error checking to use either for other\n" \
-          "df_tools modules or otherwise.\n" \
-          "\nFunctions:\n" \
-          "check_ls, check_eq_ls_len, check_numeric, check_int, check_string,\n" \
-          "check_bool, check_dfs, param_exists_in_set, check_threshold,\n" \
-          "parent_fn_mod_2step, parent_fn_mod_3step.\n\n" \
-          "Please see the doc strings of individual functions for further information.\n" \
-          "-------------------------------------------------------------------------\n"
 
-
-# 1. Object Type/Value and List length checking
+# ====== Object Type/Value and List length checking
 def check_ls(ls, nt_flag=False):
     """
     This function checks if an object is a list. If not, it returns an error, noting that a list is required.
 
     Parameters:
     :param ls: (any object) Object to check. A list is expected.
-    :param nt_flag: (boolean) Non-termination flag. That is, if the condition is not met and nt_flag==True, then the script is
-        not terminated. If nt_flag==False, then the script is terminated. This allows the user to use multiple checks
-        as a condition without terminating the script if one of them is met.
+    :param nt_flag: (boolean) Non-termination flag. That is, if the condition is not met and nt_flag==True, then the
+        script is not terminated. If nt_flag==False, then the script is terminated. This allows the user to use
+        multiple checks as a condition without terminating the script if one of them is met.
     :return: err_flag: (boolean) The result of the error check. True means that the object passed to [ls] is not a list.
         False means that it was.
     """
@@ -56,11 +68,10 @@ def check_np_array(arr, nt_flag=False):
     """
     This function checks if an object is a numpy.array. If not, it returns an error, noting that a list is required.
 
-    Parameters:
     :param arr: (any object) Object to be checked. A numpy array is expected.
-    :param nt_flag: (boolean) Non-termination flag. That is, if the condition is not met and nt_flag==True, then the script is
-        not terminated. If nt_flag==False, then the script is terminated. This allows the user to use multiple checks
-        as a condition without terminating the script if one of them is met.
+    :param nt_flag: (boolean) Non-termination flag. That is, if the condition is not met and nt_flag==True, then the
+        script is not terminated. If nt_flag==False, then the script is terminated. This allows the user to use multiple
+        checks as a condition without terminating the script if one of them is met.
     :return: err_flag: (boolean) The result of the error check. True means that the object passed to [arr] is not an
         np array. False means that it was.
     """
@@ -83,13 +94,13 @@ def check_np_array(arr, nt_flag=False):
     return err_flag
 
 
-def check_eq_ls_len(list_ls=[]):
+def check_eq_ls_len(list_ls):
     """
     This function checks a list of lists to ensure that they are all the same length. If they are not, an error is
         returned, and the script is exited.
 
     Parameters:
-    :param list_ls: (any object) A list of lists in which each member's length will be compared to the others.
+    :param list_ls: (any) A list of lists in which each member's length will be compared to the others.
     :return: 0
     """
     for ls_no in range(0, len(list_ls) - 1):
@@ -126,19 +137,19 @@ def check_num_equal(val1, val2):
     return 0
 
 
-def check_numeric(values=[]):
+def check_numeric(values):
     """
     This function checks to see if all values in a list are numerical. It passed tests with nans and strings. If a
         non-numerical value is found (by type cast to integer), then it an error is returned and the script stops. The
         resulting error will indicate the calling module, function and line number within the calling module.
 
     Parameters:
-    :param values: (any object) A list of values to check to ensure that they are numeric. If they are not, an error is returned,
-        and the script is exited.
+    :param values: (any object) A list of values to check to ensure that they are numeric. If they are not, an error is
+        returned, and the script is exited.
     :return: 0
     """
-    # Todo: The following numpy types were not being recognized at a certain point during testing. The cause is
-    # todo: unknown since they were initially working fine. Will work to re-implement them in future versions.
+    # Note: The following numpy types were not being recognized at a certain point during testing. The cause is
+    # unknown since they were initially working fine. Will work to re-implement them in future versions.
     # Problematic types: np.int128, no.float80, np.float96, np.float128, np.float256, np.uint128, np.int128
 
     numeric_types = (int, float, complex, np.int, np.int8, np.int16, np.int32, np.int64, np.float,
@@ -156,13 +167,13 @@ def check_numeric(values=[]):
     return 0
 
 
-def check_int(values=[]):
+def check_int(values):
     """
     This function checks if every item in a list is an integer. Otherwise, it returns an error and exits the script.
 
     Parameters:
-    :param values: (any object) List of values/objects that will be tested as to whether or not they are integers. If any are not,
-        an error is returned, and the script is exited.
+    :param values: (any object) List of values/objects that will be tested as to whether or not they are integers.
+        If any are not, an error is returned, and the script is exited.
     :return: 0
     """
     for val, valnum in zip(values, range(len(values))):
@@ -178,13 +189,13 @@ def check_int(values=[]):
     return 0
 
 
-def check_string(values=[]):
+def check_string(values):
     """
     This function checks if every item in a list is an integer. Otherwise, it returns an error and exits the script.
 
     Parameters:
-    :param values: (any object) List of values/objects that will be tested as to whether or not they are strings. If any are not,
-        an error is returned and the script is exited.
+    :param values: (any object) List of values/objects that will be tested as to whether or not they are strings.
+        If any are not, an error is returned and the script is exited.
     :return: 0
     """
     for val, valnum in zip(values, range(len(values))):
@@ -200,7 +211,7 @@ def check_string(values=[]):
     return 0
 
 
-def check_bool(values=[]):
+def check_bool(values):
     """
     This function checks whether or not a list of values are boolean. If not, returns an error, echos to the terminal
         and exits the script.
@@ -223,13 +234,14 @@ def check_bool(values=[]):
     return 0
 
 
-def check_dfs(values=[]):
+def check_dfs(values):
     """
     This function checks if every item in a list is a pandas DataFrame. If any are not, an error is returned, and the
         script is exited.
 
     Parameters:
-    :param values: (any object) List of values/objects that will be tested as to whether or not they are pandas DataFrames.
+    :param values: (any object) List of values/objects that will be tested as to whether or not they are pandas
+        DataFrames.
     :return: 0
     """
     for val, valnum in zip(values, range(len(values))):
@@ -245,7 +257,7 @@ def check_dfs(values=[]):
     return 0
 
 
-def check_pathlib_path(values=[]):
+def check_pathlib_path(values):
     """
     This function checks whether or not a value is a legitimate pathlib2 path type (pathlib.Path)
     :param values:
@@ -262,7 +274,7 @@ def check_pathlib_path(values=[]):
     return path_check
 
 
-def param_exists_in_set(value, val_set=[]):
+def param_exists_in_set(value, val_set):
     """
     This function checks if the passed value exists in a set of values
     :param value: (any object) The value to check for in the set.
@@ -282,7 +294,7 @@ def param_exists_in_set(value, val_set=[]):
     return 0
 
 
-def check_threshold(values=[], thresh=1.0, how='under'):
+def check_threshold(values, thresh=1.0, how='under'):
     """
     This function checks to see whether or not a numeric value is less than/equal to or greater than/equal to a
      given threshold value. If any are not, an error is returned, and the script is exited.
@@ -327,7 +339,7 @@ def check_threshold(values=[], thresh=1.0, how='under'):
     return 0
 
 
-# 2. Chemistry checking files
+# ====== Chemistry checking files
 def is_element(eles, return_cleaned=False):
     """
     This function takes a list of strings that are presumed to be elements. It uses the package, "periodic" to check
@@ -362,7 +374,7 @@ def is_element(eles, return_cleaned=False):
         return 0
 
 
-# 3. File existence/type checking
+# ====== File existence/type checking
 def f_is_csv(file=""):
     """
     This function checks 1) whether a file exists and 2) is a csv file or not, by checking the last 3 letters of the
@@ -407,7 +419,7 @@ def f_is_xls(file=""):
     return f_check
 
 
-# 4. Error location finding functions
+# ====== Error location finding functions
 def parent_fn_mod_1step():
     """
     This function finds the calling module, function and line number 1 step prior to current function
@@ -416,6 +428,7 @@ def parent_fn_mod_1step():
     """
 
     return stack()[1].filename, stack()[1].function, stack()[1].lineno
+
 
 def parent_fn_mod_2step():
     """

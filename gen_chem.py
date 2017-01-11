@@ -1,17 +1,28 @@
 # gen_chem.py
 
-# Module/package import
+"""
+Module containing general chemistry functions to handle chemical formula names,
+elemental analysis of formulas, etc.
+"""
+
+import pygaero._dchck as _check
 import pandas as pd
 import numpy as np
-import pygaero._dchck as check
 import sys
 import periodic
 
-__doc__ = "Module containing general chemistry functions to handle chemical formula names, \n" \
-          "elemental analysis of formulas, etc."
+__all__ = ['cln_molec_names',
+           'replace_group',
+           'concat_df_lists',
+           'ele_stats',
+           'o_to_c',
+           'h_to_c',
+           'osc',
+           'osc_nitr',
+           'remove_duplicates']
 
 
-# 1. Molecule name formatting/modification functions
+# ====== Molecule name formatting/modification functions
 def cln_molec_names(idx_names, delim='_'):
     """
     This function takes a list of strings (assumed to be molecule names for this package) and delimits them, using
@@ -23,16 +34,16 @@ def cln_molec_names(idx_names, delim='_'):
     :return: cleaned_names: (list of strings) A numpy array containing the delimited names that were originally
         in parameter [idx_names]
     """
-    # Check data types to make sure that there is no error in subsequent loops.
-    if check.check_ls(ls=idx_names, nt_flag=True) and check.check_np_array(arr=idx_names, nt_flag=True):
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+    # _check data types to make sure that there is no error in subsequent loops.
+    if _check.check_ls(ls=idx_names, nt_flag=True) and _check.check_np_array(arr=idx_names, nt_flag=True):
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
-    check.check_string(values=idx_names)
-    check.check_string(values=[delim])
+    _check.check_string(values=idx_names)
+    _check.check_string(values=[delim])
 
     cleaned_names = []
     for i in range(0, len(idx_names)):
@@ -70,16 +81,16 @@ def replace_group(molec_ls, old_groups, new_group=""):
         according to the values of [old_ele] and [new_ele].
     """
     # Check data types to prevent errors in subsequent loops
-    if check.check_ls(ls=molec_ls, nt_flag=True) and check.check_np_array(arr=molec_ls, nt_flag=True):
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+    if _check.check_ls(ls=molec_ls, nt_flag=True) and _check.check_np_array(arr=molec_ls, nt_flag=True):
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
-    check.check_ls(ls=old_groups)
+    _check.check_ls(ls=old_groups)
     for param in [old_groups, new_group, molec_ls]:
-        check.check_string(values=param)
+        _check.check_string(values=param)
 
     molec_ls_new = []
     for item in molec_ls:
@@ -119,15 +130,15 @@ def concat_df_lists(df_ls1, df_ls2, axis=0, join='inner'):
         DataFrame from list 2
     """
     # Check data types to prevent errors during processing.
-    check.check_ls(ls=df_ls1)
-    check.check_ls(ls=df_ls2)
-    check.check_dfs(values=df_ls1)
-    check.check_dfs(values=df_ls2)
-    check.check_eq_ls_len(list_ls=[df_ls1, df_ls2])
-    check.check_numeric(values=[axis])
-    check.param_exists_in_set(value=axis, val_set=[0, 1])
-    check.check_string(values=[join])
-    check.param_exists_in_set(value=join, val_set=['inner', 'outer'])
+    _check.check_ls(ls=df_ls1)
+    _check.check_ls(ls=df_ls2)
+    _check.check_dfs(values=df_ls1)
+    _check.check_dfs(values=df_ls2)
+    _check.check_eq_ls_len(list_ls=[df_ls1, df_ls2])
+    _check.check_numeric(values=[axis])
+    _check.param_exists_in_set(value=axis, val_set=[0, 1])
+    _check.check_string(values=[join])
+    _check.param_exists_in_set(value=join, val_set=['inner', 'outer'])
 
     # Initialize return list for concatenated DataFrames
     df_ls_concat = []
@@ -154,7 +165,7 @@ def concat_df_lists(df_ls1, df_ls2, axis=0, join='inner'):
     return df_ls_concat
 
 
-# 3. Molecule elemental analysis and statistics functions
+# ====== Molecule elemental analysis and statistics functions
 def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.90447, xtra_elements=None):
     """
     This function takes a list of string values that are chemical formulas and calculates a set of basic statistics for
@@ -187,49 +198,46 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
     :param cluster_group: (string) If ions are in a clustered form (e.g., clustered with I-), the user should specify
         what element (or group) is the cluster group so that it can be counted. Note that if cluster_group is an
         element, it should NOT be repeated in the list, xtra_elements.
-    :param clst_group_mw: (int or float) Molecular weight/mass of the cluster group in g/mol. Important to specify this for an
-        accurate molecular weight calculations. If it is an element, then clst_group_mw can be set to 0 and the
+    :param clst_group_mw: (int or float) Molecular weight/mass of the cluster group in g/mol. Important to specify this
+        for an accurate molecular weight calculations. If it is an element, then clst_group_mw can be set to 0 and the
         correct elemental molecular weight will be used in MW calculations.
-    :param xtra_elements: (list of strings) Extra elements which should be accunted for. That is, elements other
+    :param xtra_elements: (list of strings) Extra elements which should be accounted for. That is, elements other
         than C, H, O, N, Cl, F, and Br.
     :return df_ele: A returned pandas DataFrame containing statistics for the molecules in molec_ls
     """
 
     # Check data types to prevent subsequent errors.
-    if check.check_ls(ls=molec_ls, nt_flag=True) and check.check_np_array(arr=molec_ls, nt_flag=True):
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+    if _check.check_ls(ls=molec_ls, nt_flag=True) and _check.check_np_array(arr=molec_ls, nt_flag=True):
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
-    if (check.check_ls(ls=xtra_elements, nt_flag=True) and check.check_np_array(arr=xtra_elements, nt_flag=True)) \
+    if (_check.check_ls(ls=xtra_elements, nt_flag=True) and _check.check_np_array(arr=xtra_elements, nt_flag=True)) \
             and xtra_elements is not None:
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
-    # print('check.check_ls(ls=cluster_group), nt_flag=True', check.check_ls(ls=cluster_group, nt_flag=True))
     if not cluster_group:
         pass
-    elif not check.check_ls(ls=cluster_group, nt_flag=True):
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+    elif not _check.check_ls(ls=cluster_group, nt_flag=True):
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit("Inappropriate type passed to parameter: list.")
     # elif cluster_group is not None:
     else:
-        check.check_string(values=[cluster_group])
-    check.check_numeric(values=[ion_state])
-    check.check_numeric(values=[clst_group_mw])
+        _check.check_string(values=[cluster_group])
+    _check.check_numeric(values=[ion_state])
+    _check.check_numeric(values=[clst_group_mw])
 
     # Set column names for returned DataFrame, df_ele.
-    # columns = ["C", "H", "O", "N", "Cl", "F", "Br", cluster_group, "O/C", "H/C", "OSC", "OSC_N",
-    #            "MW", "MW_xclust"]
     columns = ["C", "H", "O", "N", "Cl", "F", "Br", "O/C", "H/C", "OSC", "OSC_N",
                "MW", "MW_xclust"]
     if cluster_group is not None:
@@ -237,7 +245,7 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
         columns.extend(cluster_group)
     # Extend columns list by # of elements in xtra_elements.
     if xtra_elements is not None:
-        xtra_elements = check.is_element(eles=xtra_elements, return_cleaned=True)
+        xtra_elements = _check.is_element(eles=xtra_elements, return_cleaned=True)
         columns.extend(xtra_elements)
     columns = remove_duplicates(values=columns)
 
@@ -288,12 +296,12 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
         df_ele.ix[molec, cluster_group] = clst_count
 
         # Calculate molecular weight/mass now that all basic elements/cluster groups have been counted
-        MW = 0.0
-        MW_xclust = 0.0
+        mw = 0.0
+        mw_xclust = 0.0
         for ele in elements_ls:
             ele_stats = periodic.element(ele)
-            MW += ele_stats.mass * df_ele.ix[molec, ele]
-            MW_xclust += ele_stats.mass * df_ele.ix[molec, ele]
+            mw += ele_stats.mass * df_ele.ix[molec, ele]
+            mw_xclust += ele_stats.mass * df_ele.ix[molec, ele]
         if (cluster_group is not None) and (len(cluster_group) > 0):
             if clst_group_mw == 0:
                 clst_stats = periodic.element(cluster_group)
@@ -302,13 +310,13 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
                           'a molecular weight (g/mol) for the group using parameter [clst_group_mw] in '
                           'function ele_stats()' % cluster_group)
                 else:
-                    MW += clst_stats.mass * clst_count
+                    mw += clst_stats.mass * clst_count
             else:
-                MW += clst_group_mw * clst_count
-        # Adjust MW by weight of electron (with respect to parameter [ion_state])
-        MW += ion_state*(-1)*me
-        df_ele.ix[molec, "MW"] = MW
-        df_ele.ix[molec, "MW_xclust"] = MW_xclust
+                mw += clst_group_mw * clst_count
+        # Adjust mw by weight of electron (with respect to parameter [ion_state])
+        mw += ion_state*(-1)*me
+        df_ele.ix[molec, "MW"] = mw
+        df_ele.ix[molec, "MW_xclust"] = mw_xclust
 
     # Calc all O/C, H/C and Oxidation states and then assign to df_ele
     df_ele.ix[:, "O/C"] = o_to_c(o=df_ele.ix[:, "O"].values, c=df_ele.ix[:, "C"].values)
@@ -321,30 +329,30 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
     return df_ele
 
 
-def o_to_c(o=[], c=[]):
+def o_to_c(o, c):
     """
     This function calculates a simple O/C ratio for a list of oxygen and carbon numbers. len(o) and len(c) must
         be equal.
-    :param o: (int/float list) A list of numeric values representing the number of oxygens for a list of molecules. Can be float
-        or int, but float should only be used if the calculation is for a bulk average. Otherwise, a float value
-        doesn't make sense for a single molecule.
-    :param c: (int/float list) A list of numeric values representing the number of oxygens for a list of molecules. Can be float
-        or int, but float should only be used if the calculation is for a bulk average. Otherwise, a float value
-        doesn't make sense for a single molecule.
+    :param o: (int/float list) A list of numeric values representing the number of oxygens for a list of molecules.
+        Can be float or int, but float should only be used if the calculation is for a bulk average. Otherwise, a
+        float  doesn't make sense for a single molecule.
+    :param c: (int/float list) A list of numeric values representing the number of oxygens for a list of molecules. Can
+        be float or int, but float should only be used if the calculation is for a bulk average. Otherwise, a float
+        value doesn't make sense for a single molecule.
     :return: oc_ratios: (float list) A list of float values that are the index-to-index ratios of the values in o and c
     """
     # Check to make sure that input lists are numeric and the same length to prevent errors during processing.
-    if (check.check_ls(ls=o, nt_flag=True) and check.check_np_array(arr=o, nt_flag=True)) or \
-            (check.check_ls(ls=c, nt_flag=True) and check.check_np_array(arr=c)):
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+    if (_check.check_ls(ls=o, nt_flag=True) and _check.check_np_array(arr=o, nt_flag=True)) or \
+            (_check.check_ls(ls=c, nt_flag=True) and _check.check_np_array(arr=c)):
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
-    check.check_eq_ls_len(list_ls=[o, c])
-    check.check_numeric(values=o)
-    check.check_numeric(values=c)
+    _check.check_eq_ls_len(list_ls=[o, c])
+    _check.check_numeric(values=o)
+    _check.check_numeric(values=c)
 
     oc_ratios = []
     for no, nc in zip(o, c):
@@ -356,7 +364,7 @@ def o_to_c(o=[], c=[]):
     return oc_ratios
 
 
-def h_to_c(h=[], c=[]):
+def h_to_c(h, c):
     """
     This function calculates a simple O/C ratio for a list of oxygen and carbon numbers. len(h) and len(c) must
         be equal.
@@ -369,17 +377,17 @@ def h_to_c(h=[], c=[]):
     :return: hc_ratios: (float list) A list of values that are the index-to-index ratios of the values in h and c
     """
     # Check to make sure that input lists are numeric and the same length to prevent errors during processing.
-    if (check.check_ls(ls=h, nt_flag=True) and check.check_np_array(arr=h, nt_flag=True)) or \
-            (check.check_ls(ls=c, nt_flag=True) and check.check_np_array(arr=c)):
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+    if (_check.check_ls(ls=h, nt_flag=True) and _check.check_np_array(arr=h, nt_flag=True)) or \
+            (_check.check_ls(ls=c, nt_flag=True) and _check.check_np_array(arr=c)):
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
-    check.check_eq_ls_len(list_ls=[h, c])
-    check.check_numeric(values=h)
-    check.check_numeric(values=c)
+    _check.check_eq_ls_len(list_ls=[h, c])
+    _check.check_numeric(values=h)
+    _check.check_numeric(values=c)
 
     hc_ratios = []
     for no, nc in zip(h, c):
@@ -391,7 +399,7 @@ def h_to_c(h=[], c=[]):
     return hc_ratios
 
 
-def osc(c=[], h=[], o=[]):
+def osc(c, h, o):
     """
     This function calculates a carbon oxidation state (OSC from Kroll et al., 2011). This is calculated by the formula:
         OSC = 2*(O/C) - (H/C).
@@ -406,19 +414,19 @@ def osc(c=[], h=[], o=[]):
     """
     # Verify that parameters are lists of numerical values (numpy ndarray or python list) to prevent error in
     # subsequent loops
-    if (check.check_ls(ls=c, nt_flag=True) and check.check_np_array(arr=c, nt_flag=True)) or \
-            (check.check_ls(ls=h, nt_flag=True) and check.check_np_array(arr=h)) or \
-            (check.check_ls(ls=o, nt_flag=True) and check.check_np_array(arr=o)):
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+    if (_check.check_ls(ls=c, nt_flag=True) and _check.check_np_array(arr=c, nt_flag=True)) or \
+            (_check.check_ls(ls=h, nt_flag=True) and _check.check_np_array(arr=h)) or \
+            (_check.check_ls(ls=o, nt_flag=True) and _check.check_np_array(arr=o)):
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
-    check.check_eq_ls_len(list_ls=[c, h, o])
-    check.check_numeric(values=c)
-    check.check_numeric(values=h)
-    check.check_numeric(values=o)
+    _check.check_eq_ls_len(list_ls=[c, h, o])
+    _check.check_numeric(values=c)
+    _check.check_numeric(values=h)
+    _check.check_numeric(values=o)
 
     ox_states = []
     for nc, nh, no in zip(c, h, o):
@@ -430,7 +438,7 @@ def osc(c=[], h=[], o=[]):
     return ox_states
 
 
-def osc_nitr(c=[], h=[], o=[], n=[]):
+def osc_nitr(c, h, o, n):
     """
     This function calculates a carbon oxidation state (OSC from Kroll et al., 2011). This is calculated by the formula:
         OSC = 2*(O/C) - (H/C) - 5*(N/C).
@@ -446,21 +454,21 @@ def osc_nitr(c=[], h=[], o=[], n=[]):
     """
     # Verify that parameters are lists of numerical values (numpy ndarray or python list) to prevent error in
     # subsequent loops
-    if (check.check_ls(ls=c, nt_flag=True) and check.check_np_array(arr=c, nt_flag=True)) or \
-            (check.check_ls(ls=h, nt_flag=True) and check.check_np_array(arr=h)) or \
-            (check.check_ls(ls=o, nt_flag=True) and check.check_np_array(arr=o)) or \
-            (check.check_ls(ls=n, nt_flag=True) and check.check_np_array(arr=n)):
-        main_module, main_fn, main_lineno = check.parent_fn_mod_3step()
-        calling_module, calling_fn, calling_lineno = check.parent_fn_mod_2step()
+    if (_check.check_ls(ls=c, nt_flag=True) and _check.check_np_array(arr=c, nt_flag=True)) or \
+            (_check.check_ls(ls=h, nt_flag=True) and _check.check_np_array(arr=h)) or \
+            (_check.check_ls(ls=o, nt_flag=True) and _check.check_np_array(arr=o)) or \
+            (_check.check_ls(ls=n, nt_flag=True) and _check.check_np_array(arr=n)):
+        main_module, main_fn, main_lineno = _check.parent_fn_mod_3step()
+        calling_module, calling_fn, calling_lineno = _check.parent_fn_mod_2step()
         print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
         print('     Error on line %i in module %s' % (calling_lineno, calling_module))
         print('         Invalid input for function %s' % calling_fn)
         sys.exit('ERROR: Either a list or np.array is required')
-    check.check_eq_ls_len(list_ls=[c, h, o, n])
-    check.check_numeric(values=c)
-    check.check_numeric(values=h)
-    check.check_numeric(values=o)
-    check.check_numeric(values=n)
+    _check.check_eq_ls_len(list_ls=[c, h, o, n])
+    _check.check_numeric(values=c)
+    _check.check_numeric(values=h)
+    _check.check_numeric(values=o)
+    _check.check_numeric(values=n)
 
     ox_states_nitr = []
     for nc, nh, no, nn in zip(c, h, o, n):
@@ -472,7 +480,7 @@ def osc_nitr(c=[], h=[], o=[], n=[]):
     return ox_states_nitr
 
 
-# Miscellaneous functions
+# ====== Miscellaneous/Utility
 def remove_duplicates(values):
     """
     Function to remove duplcate values from a list

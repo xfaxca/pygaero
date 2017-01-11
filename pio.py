@@ -1,12 +1,16 @@
 # io.py
 
-# Module import
+"""
+Module containing basic i/o functions for data import and export.
+"""
+
 import pandas as pd
 import os.path
 import sys
-import pygaero._dchck as check
+import pygaero._dchck as _check
 
-__doc__ = "Module containing basic i/o functions for data import and export."
+__all__ = ['read_files',
+           'set_idx_ls']
 
 
 def read_files(fdir="", flist=[""]):
@@ -20,12 +24,11 @@ def read_files(fdir="", flist=[""]):
         parameter [flist].
     """
     # Check data types to ensure that errors are prevented further down
-    # todo: Add check to see if fdir is a solid directory.
+    _check.check_string(values=[fdir])
 
-    check.check_string(values=[fdir])
     # Check whether each file in flist is a pathlib2.Path type. If not, test to make sure it is a string.
-    if not check.check_pathlib_path(values=flist):
-        check.check_string(values=flist)
+    if not _check.check_pathlib_path(values=flist):
+        _check.check_string(values=flist)
     # Check to make sure fdir exists as a directory
     if (len(fdir) > 0) and not os.path.isdir(fdir):
         print('Directory %s does not exist! Quitting script...' % fdir)
@@ -38,10 +41,10 @@ def read_files(fdir="", flist=[""]):
     df_desorbs_ls = []
     for f, fnum in zip(flist, range(len(flist))):
         if os.path.isfile(f):
-            if check.f_is_xls(file=f):
+            if _check.f_is_xls(file=f):
                 df_tmp = pd.read_excel(io=f, index_col=0)
                 df_desorbs_ls.append(df_tmp)
-            elif check.f_is_csv(file=f):
+            elif _check.f_is_csv(file=f):
                 df_tmp = pd.DataFrame.from_csv(f)
                 df_desorbs_ls.append(df_tmp)
             else:
@@ -65,11 +68,10 @@ def set_idx_ls(df_ls, idx_name=''):
     :param idx_name: (string) The user-specified column to reassign as the index of each pandas DataFrame in df_ls.
     :return: Nothing. DataFrames are modified in place.
     """
-    # TODO: test the functionality of this function.
     # Input type checking to prevent errors during index setting.
-    check.check_ls(ls=df_ls)
-    check.check_dfs(values=df_ls)
-    check.check_string(values=[idx_name])
+    _check.check_ls(ls=df_ls)
+    _check.check_dfs(values=df_ls)
+    _check.check_string(values=[idx_name])
 
     for df, df_num in zip(df_ls, range(0, len(df_ls))):
         if idx_name in df.columns:

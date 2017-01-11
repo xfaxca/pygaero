@@ -1,26 +1,37 @@
 # clustering.py
 
-# Package import
-from pygaero import _dchck as check
+"""
+Module containing functions for clustering analysis of ToF-CIMS data. Examples of useable features
+from CIMS data are: # of carbon, # of oxygen, O/C ratios, Molecular Weights, Oxidation states, etc.
+Preparation of features for clustering can be performed by using the 'concat_df_ls' function in
+gen_chem.py to concatenate TMax stats and elemental parameters (O, C, O/C, N, etc.).
+Many of the functions here, particularly those intended for preprocessing/cleaning of feature
+data could be used when implementing other supervised/unsupervised machine learning methods.
+"""
+
+from pygaero import _dchck as _check
 import sys
 import numpy as np
 import pandas as pd
-import sklearn
+
 from sklearn import preprocessing
+from sklearn.metrics import silhouette_score as sscore
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler
-from sklearn.metrics import silhouette_samples, silhouette_score
+
 import matplotlib.pyplot as plt
 
-__doc__ = "Module containing functions for clustering analysis of ToF-CIMS data. Examples of useable features\n" \
-          "from CIMS data are: # of carbon, # of oxygen, O/C ratios, Molecular Weights, Oxidation states, etc.\n" \
-          "Preparation of features for clustering can be performed by using the 'concat_df_ls' function in \n" \
-          "gen_chem.py to concatenate TMax stats and elemental parameters (O, C, O/C, N, etc.).\n" \
-          "\nMany of the functions here, particularly those intended for preprocessing/cleaning of feature\n" \
-          "data could be used when implementing other supervised/unsupervised machine learning methods."
+
+__all__ = ['select_features',
+           'drop_nans',
+           'one_hot_enc',
+           'dummy_features',
+           'kmeans_fit',
+           'choose_scaler',
+           'silhouette_eval_kmeans',
+           'plot_clusters_2D']
 
 
-# 1. Preprocessing Functions
+# ====== Preprocessing Functions
 def select_features(df_X, feature_ls):
     """
     Function to select a subset of feature columns in a pandas DataFrame that contains said features. If the
@@ -32,8 +43,8 @@ def select_features(df_X, feature_ls):
     :return:
     """
     # Verify DataFrame to prevent subsequent pandas error, and check feature list
-    check.check_dfs(values=[df_X])
-    check.check_ls(ls=feature_ls, nt_flag=False)
+    _check.check_dfs(values=[df_X])
+    _check.check_ls(ls=feature_ls, nt_flag=False)
 
     df_select = df_X[feature_ls]
 
@@ -64,10 +75,10 @@ def drop_nans(X, axis=1, rm_method='any', inplace=False):
         is returned, which is a list of the DataFrames with nans removed as specified by axis and rm_method parameters.
     """
     # Check to verify parameter inputs are correct types to avoid error in this function
-    check.check_bool(values=[inplace])
-    check.param_exists_in_set(value=axis, val_set=[0, 1])
-    check.param_exists_in_set(value=rm_method, val_set=['any', 'all'])
-    check.param_exists_in_set(value=inplace, val_set=[True, False])
+    _check.check_bool(values=[inplace])
+    _check.param_exists_in_set(value=axis, val_set=[0, 1])
+    _check.param_exists_in_set(value=rm_method, val_set=['any', 'all'])
+    _check.param_exists_in_set(value=inplace, val_set=[True, False])
 
     # Process the DataFrame or ndarray in the proper way, depending on what type it is
     if isinstance(X, pd.DataFrame):
@@ -103,7 +114,7 @@ def drop_nans(X, axis=1, rm_method='any', inplace=False):
                 print('--------------NaN Removal Failed--------------')
                 return X
     else:
-        module, func, lineno = check.parent_fn_mod_1step()
+        module, func, lineno = _check.parent_fn_mod_1step()
         print('Error on line %i in module %s, function "%s"!\n'
               '     Object X must be a pandas DataFrame or NumPy ndarray.' % (lineno-15, module, func))
         sys.exit()
@@ -125,12 +136,12 @@ def one_hot_enc(df_raw, features, return_encoders=False):
         http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html
     """
     # Verify input is pandas DataFrame to prevent subsequent pandas errors
-    check.check_dfs(values=[df_raw])
-    check.check_ls(ls=features, nt_flag=False)
+    _check.check_dfs(values=[df_raw])
+    _check.check_ls(ls=features, nt_flag=False)
 
     # Create LabelEncoder and OneHotEncoder
-    lenc = sklearn.preprocessing.LabelEncoder()
-    ohe = sklearn.preprocessing.OneHotEncoder()
+    lenc = preprocessing.LabelEncoder()
+    ohe = preprocessing.OneHotEncoder()
 
     #
     df_lenc = df_raw.copy(deep=True)
@@ -169,14 +180,16 @@ def one_hot_enc(df_raw, features, return_encoders=False):
 
 def dummy_features(df_raw, features):
     """
-    Function to create dummy varialbes from features in parameter [features] using pandas.get_dummies(). This
+    Function to create dummy variables from features in parameter [features] using pandas.get_dummies(). This
     is recommended over the function one_hot_enc since it is much more straightforward and handles text categorical
     feature values without any necessity for pre-processing with LabelEncoder.
-    :param df_raw: (pandas DataFrame) DataFrame containing the feautres to be dummied by the function pandas.get_dummies().
+    :param df_raw: (pandas DataFrame) DataFrame containing the feautres to be dummied by the function
+        pandas.get_dummies().
+    :param features: (list) Features upon which to perform one-hot encoding.
     :return: df_out: pandas DataFrame with dummied features.
     """
-    check.check_dfs(values=[df_raw])
-    check.check_ls(ls=features, nt_flag=False)
+    _check.check_dfs(values=[df_raw])
+    _check.check_ls(ls=features, nt_flag=False)
     # Loop through features to make dummies so that each column can be labeled with the feature as a prefix.
     df_out = df_raw.drop(features, axis=1)
     for feature in features:
@@ -213,9 +226,9 @@ def kmeans_fit(df, n_clust=5, features=None, mode=1, scaler=None):
     """
     # return label_ls[best_idx], cluster_centers[best_idx], kms[best_idx], min_inertia
     # Check parameters to ensure they are valid choices
-    check.param_exists_in_set(value=mode, val_set=[1, 2, 3, 4])
-    check.check_dfs(values=[df])
-    check.check_int(values=[n_clust])
+    _check.param_exists_in_set(value=mode, val_set=[1, 2, 3, 4])
+    _check.check_dfs(values=[df])
+    _check.check_int(values=[n_clust])
 
     # Choose appropriate scaler
     scl, scl_str = choose_scaler(choice=scaler)
@@ -227,7 +240,7 @@ def kmeans_fit(df, n_clust=5, features=None, mode=1, scaler=None):
     else:
         for feature in features:
             if feature not in df.columns.values:
-                module, function, line = check.parent_fn_mod_1step()
+                module, function, line = _check.parent_fn_mod_1step()
                 print('===Error in module %s, function "%s", line %i' % (module, function, line))
                 print('     Feature "%s" not found in DataFrame. Exiting script!' % feature)
                 sys.exit()
@@ -247,7 +260,7 @@ def kmeans_fit(df, n_clust=5, features=None, mode=1, scaler=None):
     inertias = []
     cluster_centers = []
 
-    for iter in range(0, 15):
+    for iteration in range(0, 15):
         km_tmp = KMeans(n_clusters=n_clust, init='k-means++', n_init=10)
         labels = km_tmp.fit_predict(X)
         inertia = km_tmp.inertia_
@@ -289,6 +302,7 @@ def choose_scaler(choice):
     """
     scaler_str = str(choice).lower()
     scl = None
+    scl_str = ""
     # Assign appropriate scaler if option besides None is slected
     if scaler_str == 'mas':
         scl = preprocessing.MaxAbsScaler()
@@ -312,7 +326,7 @@ def choose_scaler(choice):
     return scl, scl_str
 
 
-# ------------------------------- SCORING/METRIC FUNCTIONS ----------------------------- #
+# ====== Scoring/Metric Functions
 def silhouette_eval_kmeans(X, minclust=2, maxclust=15, metric='sqeuclidean', rand_st=100,
                            showplot=False):
     """
@@ -329,13 +343,9 @@ def silhouette_eval_kmeans(X, minclust=2, maxclust=15, metric='sqeuclidean', ran
     :return: Nothing. Echos best k value with respect to silhouette scores and inertia values and shows
         plot if [showplot] is True.
     """
-    from sklearn.metrics import silhouette_score as sscore
-    from sklearn.cluster import KMeans
-    import matplotlib.pyplot as plt
-
     # Check data types to prevent errors downstream
-    check.check_int(values=[minclust, maxclust])
-    check.check_string(values=[metric])
+    _check.check_int(values=[minclust, maxclust])
+    _check.check_string(values=[metric])
 
     cluster_nums = []
     sil_scores = []
@@ -384,7 +394,7 @@ def silhouette_eval_kmeans(X, minclust=2, maxclust=15, metric='sqeuclidean', ran
     return clst_silscores
 
 
-# ------------------------------- VISUALIZATION FUNCTIONS ------------------------------ #
+# ====== Visualization Functions
 def plot_clusters_2D(df, feat1, feat2, labels, title="2-Feature Scatter Plot"):
     """
     Function for a 2-D plot of two features with each point colored by it's respective cluster label.
@@ -397,13 +407,12 @@ def plot_clusters_2D(df, feat1, feat2, labels, title="2-Feature Scatter Plot"):
     :param title: (string) Title of the scatter plot
     :return: Nothing (shows plot)
     """
-    # Check data types to prevent subsequent errors
-    check.check_dfs(values=[df])
-    check.check_string(values=[feat1, feat2, title])
-    check.check_numeric(values=labels)
-
-    import matplotlib.pyplot as plt
     from pygaero import therm
+
+    # Check data types to prevent subsequent errors
+    _check.check_dfs(values=[df])
+    _check.check_string(values=[feat1, feat2, title])
+    _check.check_numeric(values=labels)
 
     print('Features chosen for plotting: ', feat1, ',', feat2)
     groups = np.unique(labels)

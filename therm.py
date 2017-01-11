@@ -1,19 +1,31 @@
 # fig_cycle.py
 
-# Module/package import
+"""
+Module containing functions designed for thermogram time series analysis, with a focus on
+peak signal detection during thermograms (Tmax).
+"""
+
+import pygaero._dchck as _check
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import peakutils
-import pygaero._dchck as check
 
-__doc__ = "Module containing functions designed for thermogram time series analysis, with a focus on" \
-          "peak signal detection during thermograms (Tmax)."
+import matplotlib.pyplot as plt
+import matplotlib.cm as cmx
+from matplotlib import colors
 
 
-def peak_find(tseries_df, temp, ion_names,
-                      peak_threshold=0.05, min_dist=50, smth=False):
-    '''
+__all__ = ['peak_find',
+           'peakfind_df_ls',
+           'plot_tmax',
+           'plot_tmax_double',
+           'flow_correction',
+           'smooth',
+           'get_cmap']
+
+
+def peak_find(tseries_df, temp, ion_names, peak_threshold=0.05, min_dist=50, smth=False):
+    """
     This function takes a pandas DataFrame containing desorption time series, along with a time series of Figaero
         heater temperatures. For each series (i.e., column in the DataFrame), the maximum value is found. For this,
         peakutils package is used. To ensure that a global maximum is found, parameters [peak_threshold] and [min_dist]
@@ -30,18 +42,18 @@ def peak_find(tseries_df, temp, ion_names,
             of 0.05 (or 5%) has been tested with figaero data from multiple experiments with no errors detected.
     :param min_dist: (int) The minimum distance of points between two peaks that will be identified. This is sensitive
             to the index resolution (e.g., time or temperature) of the input data in [tseries_df].
-    :param smooth: (bool) If true, time series are smoothed before finding the max values in the time series. NOT
+    :param smth: (bool) If true, time series are smoothed before finding the max values in the time series. NOT
             RECOMMENDED if the time series have already been smoothed before.
     :return: df_tmax: a pandas DataFrame of 5 columns with Tmax1, MaxSig1, Tmax2, MaxSig2, DubFlag (double peak flag)
-    '''
+    """
     # Check types of passed arguments to prevent errors during subsequent processing
-    check.check_dfs(values=[tseries_df])
-    check.check_num_equal(val1=tseries_df.shape[0], val2=len(temp))         # Number of datapoints must be equal
-    check.check_string(values=ion_names)
-    check.check_threshold(values=[peak_threshold], thresh=1.0000001, how='under')
-    check.check_threshold(values=[peak_threshold], thresh=0.0, how='over')
-    check.check_int(values=[min_dist])
-    check.check_bool(values=[smth])
+    _check.check_dfs(values=[tseries_df])
+    _check.check_num_equal(val1=tseries_df.shape[0], val2=len(temp))         # Number of datapoints must be equal
+    _check.check_string(values=ion_names)
+    _check.check_threshold(values=[peak_threshold], thresh=1.0000001, how='under')
+    _check.check_threshold(values=[peak_threshold], thresh=0.0, how='over')
+    _check.check_int(values=[min_dist])
+    _check.check_bool(values=[smth])
 
     for i in range(0, len(tseries_df.columns)):
         # Process each ion's time series sequentially
@@ -115,10 +127,10 @@ def peak_find(tseries_df, temp, ion_names,
                         pass
                     dub_flag += 1
     df_tmax = pd.DataFrame(data={'TMax1': TMax1,
-                                      'MaxSig1': MaxSig1,
-                                      'TMax2': TMax2,
-                                      'MaxSig2': MaxSig2,
-                                      'DubFlag': DubFlag},
+                                 'MaxSig1': MaxSig1,
+                                 'TMax2': TMax2,
+                                 'MaxSig2': MaxSig2,
+                                 'DubFlag': DubFlag},
                            index=tseries_df.columns.values)
     df_tmax.index.name = "Molecule"
 
@@ -156,13 +168,14 @@ def plot_tmax(df, ions, tmax_temps, tmax_vals):
     :param df: (pandas DataFrame) pandas DataFrame containing the desorption time series
     :param ions: (string) List of string values (or np array) for the ions to plot
     :param tmax_vals: (float) Corresponding tmax values for the items listed in parameter [ions]
+    :param tmax_temps: (float) Corresponding tmax temperatures for the items listed in parameter [ions]
     :return: Nothing returned. Plot popped to screen.
     """
     # Check data types to prevent errors during plotting
-    check.check_dfs(values=[df])
-    check.check_string(values=ions)
-    check.check_numeric(values=tmax_temps)
-    check.check_numeric(values=tmax_vals)
+    _check.check_dfs(values=[df])
+    _check.check_string(values=ions)
+    _check.check_numeric(values=tmax_temps)
+    _check.check_numeric(values=tmax_vals)
 
     n_series = len(ions)
     cmap = get_cmap(n=n_series, cm='hsv')
@@ -188,16 +201,19 @@ def plot_tmax_double(df, ions, tmax_temps, tmax_temps2, tmax_vals, tmax_vals2):
         is also plotted for those time series that are bimodal (double peak in desorption thermogram)
     :param df: (pandas DataFrame) pandas DataFrame containing the desorption time series
     :param ions: (string) List of string values (or np array) for the ions to plot
-    :param tmax_vals: (float) Corresponding tmax values for the items listed in parameter [ions]
+    :param tmax_vals: (float) Corresponding tmax signal values for the items listed in parameter [ions]
+    :param tmax_vals2: (float) Corresponding secondary peak tmax signal values for the items listed in parameter [ions]
+    :param tmax_temps: (float) Corresponding tmax temperatures for the items listed in parameter [ions]
+    :param tmax_temps2: (float) Corresponding secondary peak tmax temperatures for the items listed in parameter [ions]
     :return: Nothing returned. Plot popped to screen.
     """
     # Check data types to prevent errors during plotting
-    check.check_dfs(values=[df])
-    check.check_string(values=ions)
-    check.check_numeric(values=tmax_temps)
-    check.check_numeric(values=tmax_temps2)
-    check.check_numeric(values=tmax_vals)
-    check.check_numeric(values=tmax_vals2)
+    _check.check_dfs(values=[df])
+    _check.check_string(values=ions)
+    _check.check_numeric(values=tmax_temps)
+    _check.check_numeric(values=tmax_temps2)
+    _check.check_numeric(values=tmax_vals)
+    _check.check_numeric(values=tmax_vals2)
 
     n_series = len(ions)
     cmap = get_cmap(n=n_series, cm='hsv')
@@ -230,7 +246,7 @@ def flow_correction(thermograms, aero_samp_rates=[0.0], base_samp_rate=2.0):
         Note, thermograms are modified in-place, and overwritten.
     :param thermograms: (pandas DataFrames) Time series of aerosol desorption thermograms obtained from a Figaero
         ToF-CIMS
-    :param aero_samp_rate: (float) Aerosol sample rates for the Figaero inlet. Typically this is higher than the
+    :param aero_samp_rates: (float) Aerosol sample rates for the Figaero inlet. Typically this is higher than the
         base sample rate in order to reduce particle losses.
     :param base_samp_rate: (float) The base sample rate for the CIMS. Default is a nominal 2.0, which is popularly used.
         It is not suggested that this is changed unless a different sample rate has been verified.
@@ -238,11 +254,11 @@ def flow_correction(thermograms, aero_samp_rates=[0.0], base_samp_rate=2.0):
         for relative sample rates.
     """
     # Check data types to prevent subsequent errors
-    check.check_ls(ls=thermograms)
-    check.check_ls(ls=aero_samp_rates)
-    check.check_dfs(values=thermograms)
-    check.check_numeric(values=aero_samp_rates)
-    check.check_numeric(values=[base_samp_rate])
+    _check.check_ls(ls=thermograms)
+    _check.check_ls(ls=aero_samp_rates)
+    _check.check_dfs(values=thermograms)
+    _check.check_numeric(values=aero_samp_rates)
+    _check.check_numeric(values=[base_samp_rate])
 
     for df, samp_rate in zip(thermograms, aero_samp_rates):
         for col in range(0, len(df.columns)):
@@ -261,8 +277,8 @@ def smooth(x, window_len=11, window='hanning'):
 
     :param x: (float) Input signal to be smoothed
     :param window_len: (int, odd) the dimension of the smoothing window; should be an odd integer
-    :param window: (string) The type of window from 'flat', 'hanning', 'hamming', 'barlett', 'blackmann'.  Flat window will
-            produce a moving average smoothing.
+    :param window: (string) The type of window from 'flat', 'hanning', 'hamming', 'barlett', 'blackmann'.  Flat window
+        will produce a moving average smoothing.
     :return:
     """
     if x.ndim != 1:
@@ -274,9 +290,9 @@ def smooth(x, window_len=11, window='hanning'):
     # was 'if not window in'
     if window not in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
             raise ValueError("Window is one of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
-    s=np.r_[2*x[0]-x[window_len-1::-1], x, 2*x[-1]-x[-1:-window_len:-1]]
-    if window == 'flat': #moving average
-            w = np.ones(window_len,'d')
+    s = np.r_[2*x[0]-x[window_len-1::-1], x, 2*x[-1]-x[-1:-window_len:-1]]
+    if window == 'flat':
+            w = np.ones(window_len, 'd')
     else:
             w = eval('np.'+window+'(window_len)')
     y = np.convolve(w/w.sum(), s, mode='same')
@@ -314,9 +330,6 @@ def get_cmap(n, cm='hsv'):
                              'nipy_spectral', 'jet', 'rainbow',
                              'gist_rainbow', 'hsv', 'flag', 'prism'])]
     """
-    #
-    import matplotlib.cm as cmx
-    from matplotlib import colors
 
     color_norm = colors.Normalize(vmin=0, vmax=n-1)
     scalar_map = cmx.ScalarMappable(norm=color_norm, cmap=cm)
