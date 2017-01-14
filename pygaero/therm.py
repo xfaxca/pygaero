@@ -1,4 +1,4 @@
-# fig_cycle.py
+# therm.py
 
 """
 Module containing functions designed for thermogram time series analysis, with a focus on
