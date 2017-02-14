@@ -15,5 +15,4 @@ setup(name='pygaero',
                          'pandas==0.18.1',
                          'pathlib2==2.1.0',
                          'PeakUtils==1.0.3',
-                         'periodic==2.1.1',
                          'scikit_learn==0.18.1'])
