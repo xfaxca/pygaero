@@ -32,8 +32,13 @@ clustering
     data could be used when implementing other supervised/unsupervised machine learning methods.
 
 """
+import os
+path = os.path.abspath(__file__)
+dir_path = os.path.dirname(path)
+data_path = os.path.join(dir_path, 'elements.csv')
 table_of_elements = {}
-with open('elements.csv', 'r') as f:
+
+with open(data_path) as f:
     for line in f.readlines():
         line = line.strip().split(',')
         table_of_elements[line[0]] = float(line[1])
@@ -41,4 +46,3 @@ with open('elements.csv', 'r') as f:
 
 __version__ = "pygaero-1.50"
 __all__ = ['clustering', 'gen_chem', 'pio', 'therm', 'table_of_elements']
-
