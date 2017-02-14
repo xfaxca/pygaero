@@ -6,10 +6,10 @@ elemental analysis of formulas, etc.
 """
 
 import pygaero._dchck as _check
+from pygaero import table_of_elements
 import pandas as pd
 import numpy as np
 import sys
-import periodic
 
 __all__ = ['cln_molec_names',
            'replace_group',
@@ -299,18 +299,16 @@ def ele_stats(molec_ls, ion_state=-1, cluster_group=None, clst_group_mw=126.9044
         mw = 0.0
         mw_xclust = 0.0
         for ele in elements_ls:
-            ele_stats = periodic.element(ele)
-            mw += ele_stats.mass * df_ele.ix[molec, ele]
-            mw_xclust += ele_stats.mass * df_ele.ix[molec, ele]
+            ele_mass = table_of_elements[ele]
+            mw += ele_mass * df_ele.ix[molec, ele]
         if (cluster_group is not None) and (len(cluster_group) > 0):
             if clst_group_mw == 0:
-                clst_stats = periodic.element(cluster_group)
-                if clst_stats is None:
-                    print('Cluster group "%s" not found in periodic table. If it is not an element, please define'
-                          'a molecular weight (g/mol) for the group using parameter [clst_group_mw] in '
-                          'function ele_stats()' % cluster_group)
+                if cluster_group in table_of_elements.keys():
+                    mw += table_of_elements[cluster_group] * clst_count
                 else:
-                    mw += clst_stats.mass * clst_count
+                    print('Cluster group "%s" not found in periodic table. If it is not an element, please define'
+                                      'a molecular weight (g/mol) for the group using parameter [clst_group_mw] in '
+                                      'function ele_stats()' % cluster_group)
             else:
                 mw += clst_group_mw * clst_count
         # Adjust mw by weight of electron (with respect to parameter [ion_state])

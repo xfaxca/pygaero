@@ -11,7 +11,7 @@ import numpy as np
 import sys
 import pathlib2
 import os.path
-import periodic
+from pygaero import table_of_elements
 
 __all__ = ['check_ls',
            'check_np_array',
@@ -342,8 +342,8 @@ def check_threshold(values, thresh=1.0, how='under'):
 # ====== Chemistry checking files
 def is_element(eles, return_cleaned=False):
     """
-    This function takes a list of strings that are presumed to be elements. It uses the package, "periodic" to check
-        whether or not each member of the list is present in the table of elements.
+    This function takes a list of strings that are presumed to be elements. It uses the global table_of_elements
+        dictionary defined in __init__.py whether or not each member of the list is present in the table of elements.
     :param eles:
     :param return_cleaned: True/False value. If set to True, those elements that don't exist in the table of elements
         are removed from the list eles, and returned in eles_cln. Otherwise, nothing is retrned, and the script
@@ -353,19 +353,15 @@ def is_element(eles, return_cleaned=False):
     """
     eles_cln = []
     for ele, ele_num in zip(eles, range(0, len(eles))):
-        if periodic.element(ele) is None:
+        if ele not in table_of_elements.keys():
             if return_cleaned:
-                print('Element %s not found! Removed from elements list.' % ele)
-                pass
+                print('>Element %s not found! Removed from elements list.' % ele)
             else:
-                main_module, main_fn, main_lineno = parent_fn_mod_3step()
                 calling_module, calling_fn, calling_lineno = parent_fn_mod_2step()
-                print('On line %i in function %s of module %s' % (main_lineno, main_fn, main_module))
-                print('     Error on line %i in module %s' % (calling_lineno, calling_module))
-                print('         %s is not an element in the periodic table. Check input at index %i of list.'
+                print('Error on line %i in module %s' % (calling_lineno, calling_module))
+                print('>>>%s is not an element in the periodic table. Check input at index %i of list.'
                       % (ele, ele_num))
-                sys.exit('         ERROR: Chemical element not found in periodic table.')
-        elif (periodic.element(ele) is not None) and return_cleaned:
+        elif (ele in table_of_elements.keys()) and return_cleaned:
             eles_cln.append(ele)
 
     if return_cleaned:
